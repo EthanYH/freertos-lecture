@@ -8,10 +8,10 @@
  * 학습 중에는 실수를 조용히 넘기지 않는 것이 중요하므로,
  * 모든 훅이 명확한 메시지를 찍고 프로그램을 세운다.
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "lab.h"
 
 /*
  * pvPortMalloc() 실패 시 호출된다.
@@ -21,11 +21,10 @@
  */
 void vApplicationMallocFailedHook( void )
 {
-    printf( "\n*** 힙 할당 실패 ***\n" );
-    printf( "    남은 힙: %lu 바이트\n",
+    lab_printf( "\n*** 힙 할당 실패 ***\n" );
+    lab_printf( "    남은 힙: %lu 바이트\n",
             ( unsigned long ) xPortGetFreeHeapSize() );
-    printf( "    configTOTAL_HEAP_SIZE를 늘리거나 태스크 수를 줄이세요.\n" );
-    fflush( stdout );
+    lab_printf( "    configTOTAL_HEAP_SIZE를 늘리거나 태스크 수를 줄이세요.\n" );
     exit( 1 );
 }
 
@@ -39,9 +38,8 @@ void vApplicationMallocFailedHook( void )
 void vApplicationStackOverflowHook( TaskHandle_t xTask, char * pcTaskName )
 {
     ( void ) xTask;
-    printf( "\n*** 스택 오버플로우: '%s' ***\n", pcTaskName );
-    printf( "    xTaskCreate()의 스택 크기 인자를 늘리세요.\n" );
-    fflush( stdout );
+    lab_printf( "\n*** 스택 오버플로우: '%s' ***\n", pcTaskName );
+    lab_printf( "    xTaskCreate()의 스택 크기 인자를 늘리세요.\n" );
     exit( 1 );
 }
 
@@ -52,9 +50,8 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask, char * pcTaskName )
  */
 void vAssertCalled( const char * pcFile, unsigned long ulLine )
 {
-    printf( "\n*** ASSERT 실패 ***\n" );
-    printf( "    위치: %s : %lu\n", pcFile, ulLine );
-    fflush( stdout );
+    lab_printf( "\n*** ASSERT 실패 ***\n" );
+    lab_printf( "    위치: %s : %lu\n", pcFile, ulLine );
     exit( 1 );
 }
 

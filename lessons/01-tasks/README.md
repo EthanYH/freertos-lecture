@@ -92,20 +92,54 @@ Low와 Mid의 출력이 어떻게 되는가? 그리고 High가 5번을 다 채�
 > 이것이 **기아(starvation)** 현상이다. High가 종료되기 전까지
 > 다른 태스크는 단 한 줄도 출력하지 못한다.
 
-### 과제 3 — 스택을 줄여서 오버플로우를 내 본다
+### 과제 3 — 시뮬레이터의 한계를 확인한다
 
-`STACK_SIZE`를 `configMINIMAL_STACK_SIZE * 4`에서
-`configMINIMAL_STACK_SIZE`로 줄이면 어떻게 되는가?
+`STACK_SIZE`를 `configMINIMAL_STACK_SIZE * 4`에서 `configMINIMAL_STACK_SIZE`로
+줄여 보라. 실제 MCU라면 `printf`가 스택을 다 써서 오버플로우가 나고
+`vApplicationStackOverflowHook()`이 잡아야 한다.
 
-> `printf`는 스택을 꽤 많이 쓴다. `vApplicationStackOverflowHook()`이
-> 잡아주는지 확인하라. 실제 MCU에서 이 훅이 꺼져 있었다면 그냥
-> 이상하게 동작했을 것이다.
+**하지만 이 환경에서는 아무 일도 일어나지 않는다.** 왜 그럴까?
+
+`kernel/portable/MSVC-MingW/port.c`의 `pxPortInitialiseStack()` 주석을 읽어 보라.
+
+> In this simulated case a stack is not initialised, but instead a thread
+> is created that will execute the task being created. ... the stack buffer
+> is still used, just not in the conventional way.
+
+Windows 포트는 FreeRTOS가 할당한 스택 버퍼를 실제 실행에 쓰지 않는다.
+각 태스크는 `CreateThread()`로 만든 **Windows 스레드의 스택**에서 돌고,
+FreeRTOS가 준 버퍼는 포트 내부 구조체(`ThreadState_t`)를 담는 용도로만 쓴다.
+
+그래서 `configCHECK_FOR_STACK_OVERFLOW`가 검사하는 버퍼는 애초에
+태스크가 건드리지 않는 영역이고, 오버플로우는 영원히 감지되지 않는다.
+`uxTaskGetStackHighWaterMark()`도 같은 이유로 의미 없는 값을 준다.
+
+```c
+/* 태스크 안에서 찍어 보라. 값이 거의 변하지 않는다. */
+LOG( "스택 여유: %lu 워드", ( unsigned long ) uxTaskGetStackHighWaterMark( NULL ) );
+```
+
+**교훈:** 시뮬레이터는 API 의미론(semantics)은 정확히 재현하지만
+하드웨어 자원 모델은 재현하지 않는다. 스택 크기 산정과 오버플로우 검출은
+**실제 타깃에서만 검증할 수 있다.** 어떤 것이 시뮬레이션되고 어떤 것이
+안 되는지 아는 것이, 시뮬레이터를 쓰는 사람의 기본기다.
 
 ### 과제 4 — 태스크를 계속 만들어 힙을 고갈시킨다
 
 `main()`에서 반복문으로 태스크를 100개 만들어 보라.
 `xTaskCreate()`의 반환값이 언제 `pdFAIL`이 되는가?
 `xPortGetFreeHeapSize()`를 함께 찍어서 확인하라.
+
+## 이 환경에서 재현되지 않는 것
+
+| 항목 | 이유 |
+|------|------|
+| 스택 오버플로우 검출 | 태스크가 Windows 스레드 스택에서 실행됨 (과제 3 참고) |
+| `uxTaskGetStackHighWaterMark()` | 같은 이유 |
+| 정확한 실시간 타이밍 | Windows 스케줄러 위에 얹혀 있어 ms 단위 지터가 있음 |
+
+반대로 **정확히 재현되는 것**: 우선순위 스케줄링 순서, 선점, 블로킹/기아,
+큐·세마포어·뮤텍스의 모든 의미론, 힙 사용량과 할당 실패.
 
 ## 참고
 

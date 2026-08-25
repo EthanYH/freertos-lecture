@@ -25,6 +25,30 @@ Windows 포트는 FreeRTOS 태스크를 Windows 스레드 위에 얹어 흉내�
 `portYIELD_FROM_ISR`을 실제 인터럽트 컨텍스트에서 실습할 수 있다.
 애플리케이션 정의 인터럽트 번호는 2번부터 사용한다.
 
+### 시뮬레이터가 재현하지 못하는 것
+
+Windows 포트는 FreeRTOS가 할당한 스택 버퍼를 실제 실행에 쓰지 않는다.
+각 태스크는 `CreateThread()`로 만든 Windows 스레드 스택에서 실행되고,
+FreeRTOS 스택 버퍼는 포트 내부 구조체를 담는 용도로만 쓰인다
+(`pxPortInitialiseStack()` 주석 참조).
+
+따라서 다음은 이 환경에서 재현되지 않으며, 이론 설명으로만 다룬다.
+
+- 스택 오버플로우 검출 (`configCHECK_FOR_STACK_OVERFLOW`)
+- `uxTaskGetStackHighWaterMark()`
+- 정확한 실시간 타이밍 (ms 단위 지터 존재)
+
+재현되는 것: 우선순위 스케줄링 순서, 선점, 블로킹/기아, 큐·세마포어·
+뮤텍스의 모든 의미론, 힙 사용량과 할당 실패, 힙 단편화.
+
+### 한글 출력
+
+소스는 UTF-8이고 Windows 콘솔 기본 코드페이지는 CP949이므로 printf로는
+한글이 깨진다. `common/lab.c`의 `lab_printf()`가 콘솔 출력 시 UTF-16으로
+변환해 `WriteConsoleW()`로 직접 쓴다. 코드페이지와 무관하게 동작한다.
+리다이렉트된 경우에는 UTF-8 바이트를 그대로 쓴다.
+모든 레슨은 `printf` 대신 `LOG()` 또는 `lab_printf()`를 쓴다.
+
 ## 디렉터리 구조
 
 ```
@@ -76,7 +100,7 @@ include ../../common/common.mk
 |---|------|------|
 | 09 | 이벤트 그룹 | AND/OR 대기, 랑데부 |
 | 10 | 스트림/메시지 버퍼 | 바이트 스트림 vs 메시지 경계 |
-| 11 | 메모리 관리 | heap_1~5 비교, 스택 오버플로우 검출 |
+| 11 | 메모리 관리 | heap_1~5 비교, 단편화 재현, 할당 실패 처리 |
 | 12 | 런타임 통계와 훅 | uxTaskGetSystemState, CPU 사용률 |
 
 ## 레슨 구성
@@ -98,7 +122,8 @@ include ../../common/common.mk
 - `configASSERT`
 - `vApplicationMallocFailedHook`
 - `vApplicationStackOverflowHook`
-- `configCHECK_FOR_STACK_OVERFLOW = 2`
+- `configCHECK_FOR_STACK_OVERFLOW = 2` (Windows 포트에서는 동작하지 않지만,
+  실제 타깃으로 옮길 때를 대비해 켜 둔다)
 
 ## 검증
 
