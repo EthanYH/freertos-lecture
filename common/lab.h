@@ -33,8 +33,13 @@ void lab_printf( const char * fmt, ... );
                 lab_task_name(),                            \
                 ##__VA_ARGS__ )
 
-/* 스케줄러 시작 후 경과 시간(ms) */
+/* 스케줄러 시작 후 경과 시간(ms). 틱 카운트 기반이라 분해능이 1틱이다. */
 unsigned long lab_now_ms( void );
+
+/* 프로그램 시작 후 경과 시간(us).
+ * QueryPerformanceCounter 기반이라 틱보다 정밀하다.
+ * ISR 응답 지연처럼 1ms 미만을 재야 할 때 쓴다 (4강). */
+unsigned long long lab_now_us( void );
 
 /* 현재 실행 중인 태스크의 이름. 스케줄러 시작 전이면 "main" */
 const char * lab_task_name( void );

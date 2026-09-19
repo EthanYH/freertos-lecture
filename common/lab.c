@@ -75,6 +75,23 @@ void lab_printf( const char * fmt, ... )
  * 시간 / 태스크 정보
  * -------------------------------------------------------------------------- */
 
+unsigned long long lab_now_us( void )
+{
+    static LARGE_INTEGER xFreq  = { .QuadPart = 0 };
+    static LARGE_INTEGER xStart = { .QuadPart = 0 };
+    LARGE_INTEGER xNow;
+
+    if( xFreq.QuadPart == 0 )
+    {
+        QueryPerformanceFrequency( &xFreq );
+        QueryPerformanceCounter( &xStart );
+    }
+
+    QueryPerformanceCounter( &xNow );
+    return ( unsigned long long )
+           ( ( ( xNow.QuadPart - xStart.QuadPart ) * 1000000LL ) / xFreq.QuadPart );
+}
+
 unsigned long lab_now_ms( void )
 {
     /* 틱 카운트를 ms로 환산. 틱이 1000Hz면 1틱 = 1ms 이므로 그대로다. */

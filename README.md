@@ -39,7 +39,7 @@ make run
 | [01](lessons/01-tasks/) | 태스크와 우선순위 | `xTaskCreate`, 선점, 기아, `vTaskDelete` |
 | [02](lessons/02-delay/) | 딜레이와 주기 실행 | `vTaskDelay` vs `xTaskDelayUntil`, 드리프트, catch-up |
 | [03](lessons/03-queue/) | 큐 | `xQueueSend/Receive`, 복사 의미론, 오버플로우와 드롭 |
-| 04 | 바이너리 세마포어 / ISR 동기화 | 준비 중 |
+| [04](lessons/04-semaphore/) | 바이너리 세마포어 / ISR 동기화 | 지연 인터럽트 처리, `portYIELD_FROM_ISR`, 이벤트 유실 |
 | 05 | 카운팅 세마포어 | 준비 중 |
 | 06 | 뮤텍스와 우선순위 역전 | 준비 중 |
 | 07 | 소프트웨어 타이머 | 준비 중 |
